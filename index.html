@@ -14,6 +14,9 @@
     <!-- Three.JS 3D rendering library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+
     <!-- Three.JS scene and renderer initialization -->
     <script>
         // Create Scene, camera, and renderer to fill up the whole screen
@@ -37,7 +40,7 @@
         scene.background = new THREE.Color( 0x000512 );
 
         // Load the test image in JIMP
-        var imageData, imageWidth, imageHeight;
+        var imageData, imageWidth, imageHeight, jimpImage;
         var plane, ambientLight, pointLight;
         Jimp.read( 'assets/testPainting.jpg' )
             .then( image => {
@@ -46,6 +49,7 @@
                 imageData = image.bitmap.data;
                 imageWidth = image.bitmap.width;
                 imageHeight = image.bitmap.height;
+                jimpImage = image;
                 let colorTexture = new THREE.DataTexture( imageData, imageWidth, imageHeight, THREE.RGBAFormat, THREE.UnsignedByteType, THREE.UVMapping );
                 colorTexture.flipY = true;
 
@@ -74,16 +78,29 @@
                 scene.add( ambientLight );
                 scene.add( pointLight );
 
+                // Generate a normal map
+                let normalMapData = generateNormalMap( image );
+                console.log(normalMapData);
+                console.log(imageWidth + ", " + imageHeight);
+                let normalMap = new THREE.DataTexture( normalMapData, imageWidth, imageHeight, THREE.RBGAFormat, THREE.UnsignedByteType, THREE.UVMapping );
+                console.log(normalMap);
+                console.log(colorTexture);
+                normalMap.flipY = true;
+                normalMap.needsUpdate = true;
+                plane.material.normalMap = normalMap;
+
                 // Kick off the animation loop
                 animate();
             } );
 
+        // Self referential animation function, runs at 60 FPS
         function animate() {
             requestAnimationFrame( animate );
             moveLight();
             renderer.render( scene, camera );
         }
 
+        // slides the point light left and right across the screen to show normal map effect
         const speed=1/60, dist = 1;
         var dir = 1;
         function moveLight() {
