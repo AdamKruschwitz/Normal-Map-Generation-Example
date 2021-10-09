@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+    <!-- JIMP image manipulation library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jimp/0.16.2-canary.1045.1221.0/jimp.js"></script>
+
+    <!-- Three.JS 3D rendering library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- Three.JS scene and renderer initialization -->
+    <script>
+        // Create Scene, camera, and renderer to fill up the whole screen
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        // Add the canvas from the renderer to the page
+        document.body.appendChild( renderer.domElement );
+
+        // Set the camera off to the side, looking at the origin
+        camera.position.set( 0, 2, 0);
+        camera.up = new THREE.Vector3( 0, 0, 1);
+        camera.lookAt(0, 0, 0);
+
+        // Set the backgorund color to a nice navy color
+        scene.background = new THREE.Color( 0x000512 );
+
+        // Load the test image in JIMP
+        var imageData, imageWidth, imageHeight;
+        var plane, ambientLight, pointLight;
+        Jimp.read( 'assets/testPainting.jpg' )
+            .then( image => {
+
+                // Creates a Three.js Texture from the loaded image data
+                imageData = image.bitmap.data;
+                imageWidth = image.bitmap.width;
+                imageHeight = image.bitmap.height;
+                let colorTexture = new THREE.DataTexture( imageData, imageWidth, imageHeight, THREE.RGBAFormat, THREE.UnsignedByteType, THREE.UVMapping );
+                colorTexture.flipY = true;
+
+                // Make a plane with the same aspect ratio as the image
+                let aspectRatio = image.bitmap.width / image.bitmap.height;
+                let geometry = new THREE.PlaneGeometry( 1 * aspectRatio, 1 );
+                let material = new THREE.MeshStandardMaterial();
+
+                // Set the color texture to the Three.js material
+                material.map = colorTexture;
+
+                // Create a new Three.js object with the generated color map and add it to the scene
+                plane = new THREE.Mesh( geometry, material );
+                scene.add(plane);
+
+                // Position the plane correctly
+                plane.position.set( 0, 0, 0 );
+                plane.up = new THREE.Vector3( 0, 0, 1 );
+                plane.lookAt( 0, 2, 0 );
+
+                // Creates lights to be added to the scene
+                ambientLight = new THREE.AmbientLight( 0xffffff, 0.4 );
+                pointLight = new THREE.PointLight( 0xffffff, 1.0, 10 );
+                pointLight.position.set( 0, .5, 1);
+
+                scene.add( ambientLight );
+                scene.add( pointLight );
+
+                // Kick off the animation loop
+                animate();
+            } );
+
+        function animate() {
+            requestAnimationFrame( animate );
+            moveLight();
+            renderer.render( scene, camera );
+        }
+
+        const speed=1/60, dist = 1;
+        var dir = 1;
+        function moveLight() {
+            pointLight.position.x += speed * dir;
+            if(Math.abs(pointLight.position.x) > dist) dir *= -1;
+        }
+        
+    </script>
+</body>
+</html>
